@@ -6,9 +6,16 @@ from PyQt5.QtWidgets import *
 class DisplayTable(QTableView):
     def __init__(self, data):
         super().__init__()
+        # if the numbers are positive, for example income, show the biggest numbers first
+
+        sorted_data = sorted(data.items(), key=lambda kv: kv[1], reverse=True)
+
+
+        a,b = map(list, zip(*sorted_data))
+        b = [round(elem, 2) for elem in b]
         self._data = [
-            list(data.keys()),
-            list(data.values())
+            a,
+            b
         ]
         self.tableModel = TableModel(self._data)
         self.setModel(self.tableModel)

@@ -1,6 +1,6 @@
 # This is a sample Python script.
 
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QLabel, QAction, QFileDialog
+from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QLabel, QAction, QFileDialog, QMessageBox
 
 from PyQt5.QtGui import QIcon
 import sys
@@ -44,16 +44,37 @@ class Window(QMainWindow):
 
     def process_csv(self,file_path):
         mappings = ing_csv_parsing.read_category_mappings("category_mappings.csv")
-        entries = ing_csv_parsing.parse_csv(file_path, mappings)
-        result = ing_csv_parsing.process_entries(entries)
-        income = dict(filter(lambda elem: elem[1] > 0.0, result.items()))
-        expenses = dict(filter(lambda elem: elem[1] < 0.0, result.items()))
+        entries = ing_csv_parsing.parse_csv(file_path)
+        income, expenses, not_mapped = ing_csv_parsing.process_entries(entries, mappings)
+        if not_mapped:
+            self.show_unmapped_entries(not_mapped)
+
+
+        # income = dict(filter(lambda elem: elem[1] > 0.0, result.items()))
+        # expenses = dict(filter(lambda elem: elem[1] < 0.0, result.items()))
         self.widget = QWidget()
         self.widget.setMinimumSize(800, 600)
         layout = donut_chart.Widget(income, expenses)
         self.widget.setLayout(layout)
         self.setCentralWidget(self.widget)
         self.widget.show()
+
+    def show_unmapped_entries(self, entries):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+
+        text = "We found some entries with no categy, they will go to Other expenses\n"
+        msg.setText(text)
+
+        msg.setInformativeText("Please edit the category_mappings.csv to assign a category")
+        msg.setWindowTitle("Unmapped entries")
+        detailed_text = ""
+
+        for entry in entries:
+            detailed_text = detailed_text + entry + "\n"
+        msg.setDetailedText(detailed_text)
+        msg.setStandardButtons(QMessageBox.Ok)
+        retval = msg.exec_()
 
 def main():
     app = QApplication(sys.argv)

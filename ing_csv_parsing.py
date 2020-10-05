@@ -16,12 +16,12 @@ def read_category_mappings(filename):
         mapping_entries = []
 
         for row in mappings:
-            mapping_entries.append(CategoryMapping(row[0], row[1]))
+            mapping_entries.append(CategoryMapping(row[0].strip(), row[1].strip()))
 
         return mapping_entries
 
 
-def parse_csv(filename, mapping_entries):
+def parse_csv(filename):
     with open(filename, 'r') as csvfile:
         transactions = csv.reader(csvfile, delimiter=',', quotechar='"')
 
@@ -35,8 +35,9 @@ def parse_csv(filename, mapping_entries):
 
     return entries
 
-def process_entries(entries):
-    result = {"Other Expenses": 0.0}
+def process_entries(entries, mapping_entries):
+    result_income = { "Other Incomes" : 0.0}
+    result_expenses = {"Other Expenses": 0.0}
 
     not_mapped_entries = []
 
@@ -44,23 +45,37 @@ def process_entries(entries):
     for row in entries:
 
         found = False
-        for mapping in CATEGORIES:
+        for mapping in mapping_entries:
             if re.search(mapping.keyword, row.name, re.IGNORECASE):
                 found = True
-                if mapping.category not in result:
-                    result[mapping.category] = 0.0
                 amount = float(row.amount.replace(",", "."))
                 if row.in_out == "Af":
-                    result[mapping.category] -= amount
+                    if mapping.category not in result_expenses:
+                        result_expenses[mapping.category] = 0.0
+                    result_expenses[mapping.category] += amount
                 else:
-                    result[mapping.category] += amount
+                    if mapping.category not in result_income:
+                        result_income[mapping.category] = 0.0
+                    result_income[mapping.category] += amount
         if not found:
             try:
-                result["Other Expenses"] +=float(row[6].replace(",","."))
+                value = float(row[6].replace(",", "."))
+                if row.in_out == "Af":
+                    result_expenses["Other Expenses"] -= value
+                else:
+                    result_income["Other Incomes"] += value
             except:
                 logging().error("Field" + row.amount + " not a number")
+            not_mapped_entries.append(row.name)
             print(row)
 
     print("++++++")
-    print(result)
-    return result
+    if result_expenses["Other Expenses"]  == 0.0:
+        del result_expenses["Other Expenses"]
+
+    if result_income["Other Incomes"] == 0.0:
+        del result_income["Other Incomes"]
+
+    print(result_income)
+    print(result_expenses)
+    return result_income, result_expenses, set(not_mapped_entries)
