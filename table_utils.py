@@ -9,8 +9,6 @@ class DisplayTable(QTableView):
         # if the numbers are positive, for example income, show the biggest numbers first
 
         sorted_data = sorted(data.items(), key=lambda kv: kv[1], reverse=True)
-
-
         a,b = map(list, zip(*sorted_data))
         b = [round(elem, 2) for elem in b]
         self._data = [
@@ -18,7 +16,12 @@ class DisplayTable(QTableView):
             b
         ]
         self.tableModel = TableModel(self._data)
-        self.setModel(self.tableModel)
+
+        self.proxy_model = QSortFilterProxyModel()
+        self.proxy_model.setSourceModel(self.tableModel)
+
+        self.setModel(self.proxy_model)
+        self.setSortingEnabled(True)
 
 
 class TableModel(QAbstractTableModel):
@@ -31,7 +34,7 @@ class TableModel(QAbstractTableModel):
         if role == Qt.DisplayRole:
             # Note: self._data[index.row()][index.column()] will also work
             value = self._data[index.column()][index.row()]
-            return str(value)
+            return value
 
     def rowCount(self, index):
         return len(self._data[0])
