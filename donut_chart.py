@@ -3,8 +3,8 @@ import random
 
 from PyQt5.QtChart import *
 from PyQt5.QtGui import *
-from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
+from table_utils import *
 
 
 class DisplayPie(QChartView):
@@ -50,40 +50,12 @@ class DisplayPie(QChartView):
         slice_.setExploded(exploded)
 
 
-class DisplayTable(QTableView):
-    def __init__(self, data):
-        super().__init__()
-        self._data = [
-            list(data.keys()),
-            list(data.values())
-        ]
-        self.tableModel = TableModel(self._data)
-        self.setModel(self.tableModel)
 
 
-class TableModel(QAbstractTableModel):
-
-    def __init__(self, data):
-        super(TableModel, self).__init__()
-        self._data = data
-
-    def data(self, index, role):
-        if role == Qt.DisplayRole:
-            # Note: self._data[index.row()][index.column()] will also work
-            value = self._data[index.column()][index.row()]
-            return str(value)
-
-    def rowCount(self, index):
-        return len(self._data[0])
-
-    def columnCount(self, index):
-        return len(self._data)
-
-class Widget(QWidget):
+class Widget(QGridLayout):
 
     def __init__(self, income, expenses):
         super().__init__()
-        self.setMinimumSize(800, 600)
 
 
         self.income_chartView = DisplayPie(income, "Income")
@@ -97,13 +69,10 @@ class Widget(QWidget):
         self.income_table = DisplayTable(income)
         self.expenses_table = DisplayTable(expenses)
 
-        # create main layout
-        self.mainLayout = QGridLayout(self)
-        self.mainLayout.addWidget(self.income_chartView, 0, 0)
-        self.mainLayout.addWidget(self.expenses_chartView, 0, 1)
-        self.mainLayout.addWidget(self.income_table, 1,0)
-        self.mainLayout.addWidget(self.expenses_table, 1,1)
+        self.addWidget(self.income_chartView, 0, 0)
+        self.addWidget(self.expenses_chartView, 0, 1)
+        self.addWidget(self.income_table, 1,0)
+        self.addWidget(self.expenses_table, 1,1)
         self.income_chartView.show()
         self.expenses_chartView.show()
-        self.setLayout(self.mainLayout)
 
