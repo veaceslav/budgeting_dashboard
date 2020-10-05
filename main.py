@@ -16,7 +16,8 @@ class Window(QMainWindow):
         self.initUI()
 
     def initUI(self):
-        self.textLabel = QLabel("Please use File->Open to select the downloaded csv file from ING")
+        self.textLabel = QLabel("Please use File->Open to select the downloaded csv file from ING \n"
+                                "The program relies on category_mappings.csv to be in the same folder with the program")
         self.setCentralWidget(self.textLabel)
         self.statusBar()
 
@@ -42,7 +43,8 @@ class Window(QMainWindow):
             self.process_csv(fname[0])
 
     def process_csv(self,file_path):
-        entries = ing_csv_parsing.parse_csv(file_path)
+        mappings = ing_csv_parsing.read_category_mappings("category_mappings.csv")
+        entries = ing_csv_parsing.parse_csv(file_path, mappings)
         result = ing_csv_parsing.process_entries(entries)
         income = dict(filter(lambda elem: elem[1] > 0.0, result.items()))
         expenses = dict(filter(lambda elem: elem[1] < 0.0, result.items()))
