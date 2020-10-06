@@ -76,7 +76,6 @@ def process_entries(entries, mapping_entries):
             not_mapped_entries.append(row.name)
             print(row)
 
-    print("++++++")
     if result_expenses["Other Expenses"]  == 0.0:
         del result_expenses["Other Expenses"]
 

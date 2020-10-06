@@ -41,13 +41,8 @@ class MainWidget(QWidget):
         self.setLayout(main_layout)
         self.show()
 
-    def clearLayout(self,layout):
-        while layout.count():
-            child = layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-
     def update_month(self):
+        #workaround to delete the data_layout
         self.layout().takeAt(1).widget().deleteLater()
 
         self.data_layout = donut_chart.Widget(self.income[self.months_combo.currentText()],
@@ -78,7 +73,6 @@ class Window(QMainWindow):
 
         self.setGeometry(300, 300, 550, 450)
         self.setWindowTitle('Budget Overview')
-        self.process_csv("/home/veaceslav/Downloads/NL42INGB0660362848_01-01-2020_01-10-2020.csv")
         self.show()
 
     def showDialog(self):
@@ -109,7 +103,7 @@ class Window(QMainWindow):
             detailed_text = detailed_text + entry + "\n"
         msg.setDetailedText(detailed_text)
         msg.setStandardButtons(QMessageBox.Ok)
-        retval = msg.exec_()
+        msg.exec_()
 
 def main():
     app = QApplication(sys.argv)
