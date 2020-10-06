@@ -2,8 +2,6 @@ import functools
 import random
 
 from PyQt5.QtChart import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
 from table_utils import *
 
 
@@ -52,12 +50,14 @@ class DisplayPie(QChartView):
 
 
 
-class Widget(QGridLayout):
+class Widget(QWidget):
 
     def __init__(self, income, expenses):
         super().__init__()
 
+        self.update_data(income,expenses)
 
+    def update_data(self, income, expenses):
         self.income_chartView = DisplayPie(income, "Income")
         self.expenses_chartView = DisplayPie(expenses, "Expenses")
 
@@ -69,10 +69,12 @@ class Widget(QGridLayout):
         self.income_table = DisplayTable(income)
         self.expenses_table = DisplayTable(expenses)
 
-        self.addWidget(self.income_chartView, 0, 0)
-        self.addWidget(self.expenses_chartView, 0, 1)
-        self.addWidget(self.income_table, 1,0)
-        self.addWidget(self.expenses_table, 1,1)
-        self.income_chartView.show()
-        self.expenses_chartView.show()
+        self.layout = QGridLayout()
+        self.layout.addWidget(self.income_chartView, 0, 0)
+        self.layout.addWidget(self.expenses_chartView, 0, 1)
+        self.layout.addWidget(self.income_table, 1,0)
+        self.layout.addWidget(self.expenses_table, 1,1)
+        self.setLayout(self.layout)
+        #self.income_chartView.show()
+        #self.expenses_chartView.show()
 

@@ -1,12 +1,58 @@
 # This is a sample Python script.
 
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QLabel, QAction, QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QLabel, QAction, QFileDialog, QMessageBox, QComboBox, QVBoxLayout
 
 from PyQt5.QtGui import QIcon
 import sys
 import ing_csv_parsing
 import donut_chart
 from pathlib import Path
+
+
+class MainWidget(QWidget):
+    def __init__(self, filepath):
+        super().__init__()
+        self.file_path = filepath
+        self.initUI()
+
+    def initUI(self):
+        self.setMinimumSize(800, 600)
+        mappings = ing_csv_parsing.read_category_mappings("category_mappings.csv")
+        entries = ing_csv_parsing.parse_csv(self.file_path)
+        self.income, self.expenses, not_mapped = ing_csv_parsing.process_entries(entries, mappings)
+        if not_mapped:
+            self.show_unmapped_entries(not_mapped)
+
+        all_entries = list(set(self.income.keys()))
+        all_entries.sort()
+        self.months_combo = QComboBox()
+
+        for entry in all_entries:
+            self.months_combo.addItem(entry)
+
+        self.months_combo.currentIndexChanged.connect(self.update_month)
+
+        main_layout = QVBoxLayout()
+
+        self.data_layout = donut_chart.Widget(self.income[self.months_combo.currentText()],
+                                              self.expenses[self.months_combo.currentText()])
+        main_layout.addWidget(self.months_combo)
+        main_layout.addWidget(self.data_layout)
+        self.setLayout(main_layout)
+        self.show()
+
+    def clearLayout(self,layout):
+        while layout.count():
+            child = layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+
+    def update_month(self):
+        self.layout().takeAt(1).widget().deleteLater()
+
+        self.data_layout = donut_chart.Widget(self.income[self.months_combo.currentText()],
+                                              self.expenses[self.months_combo.currentText()])
+        self.layout().addWidget(self.data_layout)
 
 
 class Window(QMainWindow):
@@ -32,6 +78,7 @@ class Window(QMainWindow):
 
         self.setGeometry(300, 300, 550, 450)
         self.setWindowTitle('Budget Overview')
+        self.process_csv("/home/veaceslav/Downloads/NL42INGB0660362848_01-01-2020_01-10-2020.csv")
         self.show()
 
     def showDialog(self):
@@ -43,19 +90,7 @@ class Window(QMainWindow):
             self.process_csv(fname[0])
 
     def process_csv(self,file_path):
-        mappings = ing_csv_parsing.read_category_mappings("category_mappings.csv")
-        entries = ing_csv_parsing.parse_csv(file_path)
-        income, expenses, not_mapped = ing_csv_parsing.process_entries(entries, mappings)
-        if not_mapped:
-            self.show_unmapped_entries(not_mapped)
-
-
-        # income = dict(filter(lambda elem: elem[1] > 0.0, result.items()))
-        # expenses = dict(filter(lambda elem: elem[1] < 0.0, result.items()))
-        self.widget = QWidget()
-        self.widget.setMinimumSize(800, 600)
-        layout = donut_chart.Widget(income, expenses)
-        self.widget.setLayout(layout)
+        self.widget = MainWidget(file_path)
         self.setCentralWidget(self.widget)
         self.widget.show()
 
