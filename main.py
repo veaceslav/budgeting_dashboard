@@ -1,12 +1,12 @@
 # This is a sample Python script.
 
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QLabel, QAction, QFileDialog, QMessageBox, QComboBox, QVBoxLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QLabel, QAction, QFileDialog, QHBoxLayout, QListWidget, QTextEdit
 
 from PyQt5.QtGui import QIcon
 import sys
-import ing_csv_parsing
-import donut_chart
+import csv_parsing
 from pathlib import Path
+import pprint
 
 
 class MainWidget(QWidget):
@@ -17,37 +17,27 @@ class MainWidget(QWidget):
 
     def initUI(self):
         self.setMinimumSize(800, 600)
-        mappings = ing_csv_parsing.read_category_mappings("category_mappings.csv")
-        entries = ing_csv_parsing.parse_csv(self.file_path)
-        self.income, self.expenses, not_mapped = ing_csv_parsing.process_entries(entries, mappings)
-        if not_mapped:
-            self.show_unmapped_entries(not_mapped)
+        self.entries = csv_parsing.parse_csv(self.file_path)
 
-        all_entries = list(set(self.income.keys()))
-        all_entries.sort()
-        self.months_combo = QComboBox()
+        names = [x.name + " " + x.surname  for x in self.entries ]
+        pprint.pprint(self.entries)
+        pprint.pprint(names)
 
-        for entry in all_entries:
-            self.months_combo.addItem(entry)
+        main_layout = QHBoxLayout()
+        self.list_view = QListWidget()
+        self.list_view.addItems(names)
 
-        self.months_combo.currentIndexChanged.connect(self.update_month)
-
-        main_layout = QVBoxLayout()
-
-        self.data_layout = donut_chart.Widget(self.income[self.months_combo.currentText()],
-                                              self.expenses[self.months_combo.currentText()])
-        main_layout.addWidget(self.months_combo)
-        main_layout.addWidget(self.data_layout)
+        self.list_view.currentRowChanged.connect(self.list_index_changed)
+        self.text_view = QTextEdit()
+        self.text_view.setReadOnly(True)
+        main_layout.addWidget(self.list_view,1)
+        main_layout.addWidget(self.text_view, 3)
         self.setLayout(main_layout)
         self.show()
 
-    def update_month(self):
-        #workaround to delete the data_layout
-        self.layout().takeAt(1).widget().deleteLater()
-
-        self.data_layout = donut_chart.Widget(self.income[self.months_combo.currentText()],
-                                              self.expenses[self.months_combo.currentText()])
-        self.layout().addWidget(self.data_layout)
+    def list_index_changed(self, current):
+        print("current changed" + str(current))
+        self.text_view.setText(csv_parsing.create_email(self.entries[current]))
 
 
 class Window(QMainWindow):
@@ -57,8 +47,7 @@ class Window(QMainWindow):
         self.initUI()
 
     def initUI(self):
-        self.textLabel = QLabel("Please use File->Open to select the downloaded csv file from ING \n"
-                                "The program relies on category_mappings.csv to be in the same folder with the program")
+        self.textLabel = QLabel("Please use File->Open to select the downloaded csv file from HR Office \n")
         self.setCentralWidget(self.textLabel)
         self.statusBar()
 
@@ -67,12 +56,14 @@ class Window(QMainWindow):
         openFile.setStatusTip('Open new File')
         openFile.triggered.connect(self.showDialog)
 
+        #self.process_csv('/home/veaceslav/git/Hr_Office/Export of candidates 09-11-2020.csv')
+
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
         fileMenu.addAction(openFile)
 
         self.setGeometry(300, 300, 550, 450)
-        self.setWindowTitle('Budget Overview')
+        self.setWindowTitle('Classmarker Generator')
         self.show()
 
     def showDialog(self):
@@ -88,22 +79,6 @@ class Window(QMainWindow):
         self.setCentralWidget(self.widget)
         self.widget.show()
 
-    def show_unmapped_entries(self, entries):
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Information)
-
-        text = "We found some entries with no categy, they will go to Other expenses\n"
-        msg.setText(text)
-
-        msg.setInformativeText("Please edit the category_mappings.csv to assign a category")
-        msg.setWindowTitle("Unmapped entries")
-        detailed_text = ""
-
-        for entry in entries:
-            detailed_text = detailed_text + entry + "\n"
-        msg.setDetailedText(detailed_text)
-        msg.setStandardButtons(QMessageBox.Ok)
-        msg.exec_()
 
 def main():
     app = QApplication(sys.argv)
